@@ -184,6 +184,11 @@ class DetentionLocation:
     alone_probability: float = 0.5  # 0.0 to 1.0
     pattern_confidence: float = 0.5  # How predictable
 
+    # Planet Labs satellite data
+    satellite_coverage: str = ""
+    last_satellite_update: Optional[datetime] = None
+    geospatial_confidence: float = 0.0
+
 
 @dataclass
 class DetentionWindow:
@@ -341,9 +346,14 @@ class LiveLocationData:
     heading_degrees: Optional[float] = None
 
     # Source
-    collection_method: str = ""  # gps_track, cell_tower, wifi, manual_obs
+    collection_method: str = ""  # gps_track, cell_tower, wifi, manual_obs, planet_satellite
     ripa_authorized: bool = True
     authorization_ref: str = ""
+
+    # Planet Labs satellite data
+    satellite_images_available: int = 0
+    last_satellite_image: Optional[datetime] = None
+    area_assessment: Optional[Dict] = None
 
 
 # Demo data constants

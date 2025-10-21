@@ -119,14 +119,39 @@ python3 -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
 # Install dependencies
-pip install cohere python-dotenv
+pip install cohere python-dotenv streamlit
 
 # Set up API key
 cp .env.example .env
 # Edit .env and add your COHERE_API_KEY
 ```
 
-### Run Demo
+### Demo Options
+
+#### Option 1: Streamlit Web Interface (Recommended) 🌟
+
+```bash
+streamlit run streamlit_ripa_ddo.py
+```
+
+**Open http://localhost:8502 in your browser**
+
+**Features:**
+- 📥 **Intercepts Tab**: Load demo Russian intercepts or add custom ones
+- 🔍 **Analysis Tab**: Analyze Russian content without translation
+- 👤 **Subject Profile Tab**: Build comprehensive intelligence profiles
+- 🎯 **DDO Planning Tab**: Generate detention operation plans
+- 📚 **Reference Tab**: Russian tradecraft terminology guide
+
+**Capabilities:**
+- Load demo Russian intercepts with one click
+- Real-time FSB/GRU tradecraft detection
+- Interactive risk assessment dashboards
+- DDO plan generation with visualization
+- Russian name variation generation
+- Full RIPA compliance tracking
+
+#### Option 2: Automated CLI Demo
 
 ```bash
 # Run complete Russian DDO demonstration

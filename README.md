@@ -1,6 +1,38 @@
-# DefTech AI Document Assistant Demo
+# Defense & Intelligence AI Demonstrations
 
-A complete demonstration application showcasing Cohere's AI capabilities for defense document interrogation, featuring RAG-based search, multi-step agents, and compliance logging.
+Two complete demonstration applications showcasing Cohere's AI capabilities for defense and intelligence applications.
+
+**Status:** ✅ Both Systems Operational
+
+---
+
+## 🎯 Choose Your Demo
+
+### 1. RIPA DDO Intelligence System (NEW)
+**Russian Subject Tracking with Native Multilingual Processing**
+
+A RIPA-compliant intelligence system for Deliberate Detention Operations (DDO) targeting Russian subjects. Uses Cohere's Command-R+ multilingual capabilities to process Russian-language intelligence **WITHOUT translation**.
+
+👉 **See [README_RIPA_DDO.md](README_RIPA_DDO.md) for full documentation**
+
+**Quick Start:**
+```bash
+python demo_russian_ddo.py
+```
+
+**Key Features:**
+- Native Russian processing (no translation layer)
+- FSB/GRU tradecraft detection
+- DDO operation planning
+- RIPA legal compliance
+- Chain of custody tracking
+
+---
+
+### 2. DefTech AI Document Assistant
+**RAG-based Defense Document Search**
+
+Original demonstration for defense document interrogation, featuring RAG-based search, multi-step agents, and compliance logging.
 
 **Status:** ✅ Ready for Presentation
 

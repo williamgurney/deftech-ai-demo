@@ -15,6 +15,7 @@ from models_ripa import (
 )
 from agent_russian_intel import RussianIntelAgent
 from agent_ddo_planning import DDOPlanningAgent
+from planet_geolocation import PlanetGeolocationService
 
 # Load environment
 load_dotenv()
@@ -106,6 +107,9 @@ if 'cohere_client' not in st.session_state:
     else:
         st.session_state.cohere_client = None
 
+if 'planet_service' not in st.session_state:
+    st.session_state.planet_service = PlanetGeolocationService()
+
 if 'intercepts' not in st.session_state:
     st.session_state.intercepts = []
 
@@ -117,6 +121,12 @@ if 'ddo_plan' not in st.session_state:
 
 if 'analysis_results' not in st.session_state:
     st.session_state.analysis_results = []
+
+if 'geolocation_data' not in st.session_state:
+    st.session_state.geolocation_data = None
+
+if 'satellite_images' not in st.session_state:
+    st.session_state.satellite_images = []
 
 # Header
 st.markdown("""
@@ -253,11 +263,12 @@ with st.sidebar:
         st.success("✅ DDO Plan Ready")
 
 # Main content tabs
-tab1, tab2, tab3, tab4, tab5 = st.tabs([
+tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs([
     "📥 Intercepts",
     "🔍 Analysis",
     "👤 Subject Profile",
     "🎯 DDO Planning",
+    "🛰️ Geolocation",
     "📚 Reference"
 ])
 
@@ -690,8 +701,217 @@ Detention required for intelligence gathering and prosecution.
 
         st.write(f"**Evidence Preservation Plan:** {plan.evidence_preservation_plan}")
 
-# Tab 5: Reference
+# Tab 5: Geolocation
 with tab5:
+    st.header("🛰️ Planet Labs Satellite Geolocation")
+
+    st.markdown("""
+    **Satellite Intelligence for DDO Operations**
+
+    Integration with Planet Labs provides:
+    - Satellite imagery search and analysis
+    - DDO area suitability assessment
+    - Subject movement tracking
+    - Points of interest identification
+    """)
+
+    # API Key status
+    planet_api_key = os.getenv("PLANET_API_KEY")
+    if planet_api_key:
+        st.success("✅ Planet API Key configured - Real satellite data available")
+    else:
+        st.info("ℹ️ Running in Demo Mode - No Planet API key detected. Generating simulated satellite data.")
+
+    st.divider()
+
+    # Location input
+    st.subheader("📍 Location Intelligence")
+
+    col1, col2 = st.columns([2, 1])
+
+    with col1:
+        st.write("**Enter target location:**")
+
+        use_demo = st.checkbox("Use demo location (Manchester)", value=True)
+
+        if use_demo:
+            latitude = 53.4808
+            longitude = -2.2426
+            location_name = "Subject residence - Manchester"
+        else:
+            latitude = st.number_input("Latitude", value=53.4808, format="%.6f")
+            longitude = st.number_input("Longitude", value=-2.2426, format="%.6f")
+            location_name = st.text_input("Location Name", "Target location")
+
+    with col2:
+        st.write("**Quick Stats:**")
+        if st.session_state.geolocation_data:
+            st.metric("Confidence", f"{st.session_state.geolocation_data.confidence*100:.0f}%")
+            st.metric("Satellite Images", len(st.session_state.geolocation_data.satellite_images))
+
+    # Get satellite intelligence
+    if st.button("🛰️ Get Satellite Intelligence", type="primary"):
+        with st.spinner("Searching Planet Labs satellite imagery..."):
+            intel = st.session_state.planet_service.get_location_intelligence(
+                latitude=latitude,
+                longitude=longitude,
+                location_name=location_name,
+                subject_id="TARGET"
+            )
+            st.session_state.geolocation_data = intel
+            st.session_state.satellite_images = intel.satellite_images
+            st.success(f"✅ Found {len(intel.satellite_images)} satellite images!")
+            st.rerun()
+
+    # Display satellite imagery results
+    if st.session_state.satellite_images:
+        st.divider()
+        st.subheader("🛰️ Satellite Imagery")
+
+        for img in st.session_state.satellite_images:
+            with st.expander(f"📷 {img.image_id} - {img.acquisition_time.strftime('%Y-%m-%d %H:%M')}"):
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.metric("Acquisition Date", img.acquisition_time.strftime('%Y-%m-%d'))
+                    st.metric("Cloud Cover", f"{img.cloud_cover*100:.1f}%")
+
+                with col2:
+                    st.metric("Resolution (GSD)", f"{img.ground_sample_distance}m")
+                    st.metric("Satellite", img.satellite)
+
+                with col3:
+                    if img.thumbnail_url:
+                        st.write(f"[View Thumbnail]({img.thumbnail_url})")
+                    st.write(f"**BBox:** {img.bbox[:2]}")
+
+    # Display geolocation intelligence
+    if st.session_state.geolocation_data:
+        intel = st.session_state.geolocation_data
+
+        st.divider()
+        st.subheader("📊 Geolocation Intelligence Package")
+
+        col1, col2 = st.columns([2, 1])
+
+        with col1:
+            st.write(f"**Location:** {intel.latitude:.6f}, {intel.longitude:.6f}")
+            st.write(f"**Timestamp:** {intel.timestamp.strftime('%Y-%m-%d %H:%M:%S')}")
+            st.write(f"**Source:** {intel.source}")
+
+        with col2:
+            st.metric("Intelligence Confidence", f"{intel.confidence*100:.0f}%")
+
+        # Points of Interest
+        if intel.points_of_interest:
+            st.divider()
+            st.subheader("📍 Points of Interest")
+
+            for poi in intel.points_of_interest:
+                with st.expander(f"🎯 {poi['type'].upper()} - {poi['distance_meters']}m"):
+                    st.write(f"**Description:** {poi['description']}")
+                    st.write(f"**Visibility:** {poi['visibility']}")
+                    st.write(f"**Access Points:** {poi['access_points']}")
+                    st.progress(poi['confidence'], text=f"Confidence: {poi['confidence']*100:.0f}%")
+
+        # DDO Area Assessment
+        if intel.area_assessment:
+            st.divider()
+            st.subheader("🎯 DDO Area Assessment")
+
+            assessment = intel.area_assessment
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.markdown("**Exposure & Density:**")
+                st.write(f"- Public Exposure: **{assessment.get('public_exposure_level', 'N/A').upper()}**")
+                st.write(f"- Crowd Density: **{assessment.get('crowd_density', 'N/A').upper()}**")
+                st.write(f"- Visibility: **{assessment.get('visibility_from_main_road', 'N/A')}**")
+
+            with col2:
+                st.markdown("**Operational Factors:**")
+                st.write(f"- Officer Approach: **{assessment.get('officer_approach_difficulty', 'N/A')}**")
+                st.write(f"- Subject Escape: **{assessment.get('subject_escape_difficulty', 'N/A')}**")
+                st.write(f"- Evidence Environment: **{assessment.get('evidence_preservation_environment', 'N/A')}**")
+
+            with col3:
+                st.markdown("**Intelligence Quality:**")
+                st.write(f"- Satellite Coverage: **{assessment.get('satellite_coverage', 'N/A')}**")
+                st.write(f"- Imagery Quality: **{assessment.get('imagery_quality', 'N/A')}**")
+
+            st.markdown("---")
+
+            st.markdown("**🎯 Operational Recommendation:**")
+            st.info(assessment.get('operational_recommendation', 'N/A'))
+
+            st.markdown("**⏰ Best Time Window:**")
+            st.success(assessment.get('best_time_window', 'N/A'))
+
+            # Officer Positioning
+            if 'officer_positioning' in assessment:
+                st.markdown("**👮 Officer Positioning:**")
+                for position in assessment['officer_positioning']:
+                    st.write(f"- {position}")
+
+        # Route Analysis
+        if intel.route_analysis:
+            st.divider()
+            st.subheader("🛣️ Route Analysis")
+
+            routes = intel.route_analysis
+
+            st.write(f"**Primary Access:** {routes.get('primary_access', 'N/A')}")
+
+            if 'escape_routes' in routes:
+                st.markdown("**Escape Routes:**")
+                for route in routes['escape_routes']:
+                    st.write(f"- {route['direction'].upper()}: {route['distance_km']}km ({route['type']})")
+
+            if 'chokepoints' in routes:
+                st.markdown("**Chokepoints:**")
+                for cp in routes['chokepoints']:
+                    controllable = "✅ Controllable" if cp['controllable'] else "⚠️ Not controllable"
+                    st.write(f"- {cp['location']}: {controllable}")
+
+            col1, col2 = st.columns(2)
+            with col1:
+                st.metric("Nearest Police Station", f"{routes.get('nearest_police_station_km', 'N/A')} km")
+            with col2:
+                st.metric("Nearest Hospital", f"{routes.get('nearest_hospital_km', 'N/A')} km")
+
+    # Live Location Data
+    st.divider()
+    st.subheader("📡 Create Live Location Data")
+
+    if st.button("📡 Generate RIPA Live Location"):
+        if st.session_state.geolocation_data:
+            live_data = st.session_state.planet_service.create_live_location_data(
+                latitude=latitude,
+                longitude=longitude,
+                location_name=location_name,
+                location_type="residence"
+            )
+
+            st.success("✅ Live location data created with satellite intelligence!")
+
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Accuracy", f"{live_data.accuracy_meters}m")
+            with col2:
+                st.metric("Collection Method", live_data.collection_method)
+            with col3:
+                st.metric("Satellite Images", live_data.satellite_images_available)
+
+            st.write(f"**Location:** {live_data.location_description}")
+            st.write(f"**Address:** {live_data.address}")
+            st.write(f"**RIPA Authorized:** {'✅ Yes' if live_data.ripa_authorized else '❌ No'}")
+            st.write(f"**Authorization Ref:** {live_data.authorization_ref}")
+        else:
+            st.warning("⚠️ Please get satellite intelligence first!")
+
+# Tab 6: Reference
+with tab6:
     st.header("📚 Russian Tradecraft Reference")
 
     col1, col2 = st.columns(2)
